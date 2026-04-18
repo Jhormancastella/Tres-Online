@@ -3,423 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tres en Línea - Multijugador 1v1</title>
-    <style>
-        * { box-sizing: border-box; user-select: none; }
-        body {
-            font-family: system-ui, 'Segoe UI', monospace;
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            min-height: 100vh;
-            margin: 0;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            max-width: 500px;
-            width: 100%;
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 2rem;
-            padding: 1.2rem;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        h1 { color: #facc15; text-align: center; margin-top: 0; font-size: 1.8rem; }
-        .tablero {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            background: #2d3a4a;
-            padding: 16px;
-            border-radius: 1.5rem;
-            margin: 10px 0;
-        }
-        .celda {
-            background: #0f172a;
-            border-radius: 1rem;
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-            font-weight: bold;
-            color: #facc15;
-            cursor: pointer;
-            transition: 0.1s ease;            box-shadow: 0 5px 0 #00000033;
-        }
-        .celda:active { transform: scale(0.96); }
-        .celda.x { color: #f87171; }
-        .celda.o { color: #60a5fa; }
-        .estado {
-            text-align: center;
-            margin: 15px 0 10px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            background: #00000066;
-            padding: 8px;
-            border-radius: 60px;
-            color: #facc15;
-        }
-        button {
-            background: #facc15;
-            border: none;
-            font-weight: bold;
-            font-size: 1rem;
-            padding: 10px;
-            border-radius: 40px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.1s;
-            color: #0f172a;
-            margin: 8px 0;
-        }
-        button:active { transform: scale(0.97); }
-        .logs-area {
-            background: #0a0f1a;
-            color: #a5f3c3;
-            font-family: monospace;
-            font-size: 0.7rem;
-            padding: 8px;
-            border-radius: 16px;
-            margin-top: 16px;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #facc1533;
-        }
-        .log-entry { border-bottom: 1px solid #334155; padding: 4px; word-break: break-word; }
-        .log-error { color: #ffa6a6; background: #7f1a1a33; }
-        .log-success { color: #b9ffb9; }
-        .footer { font-size: 0.7rem; text-align: center; margin-top: 12px; color: #94a3b8; }
-    </style>
+    <title>Tres en Línea</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<div class="container">
-    <h1>TRES EN LÍNEA 1vs1</h1>    <div class="estado" id="estado">Conectando...</div>
-    <div class="tablero" id="tablero"></div>
-    <button id="reiniciar">Reiniciar partida</button>
-    <div class="footer">Solo dos jugadores - Tiempo real con Supabase</div>
-    <div class="logs-area" id="logsPanel"><div class="log-entry">Iniciando juego...</div></div>
+
+<!-- ===== AUTH ===== -->
+<div class="screen active" id="screenAuth">
+    <div class="auth-card">
+        <div class="auth-title">🎮 TRES EN LÍNEA</div>
+        <div class="auth-sub">Inicia sesión o regístrate para jugar</div>
+        <div class="tabs">
+            <button class="tab-btn tab-active" id="tabLogin">Iniciar sesión</button>
+            <button class="tab-btn" id="tabRegistro">Registrarse</button>
+        </div>
+
+        <!-- Login -->
+        <form id="formLogin">
+            <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="loginEmail" placeholder="tu@correo.com" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="loginPassword" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-primary">Entrar</button>
+        </form>
+
+        <!-- Registro -->
+        <form id="formRegistro" style="display:none">
+            <div class="form-group">
+                <label>Nombre de usuario</label>
+                <input type="text" id="regUsername" placeholder="jugador123" required>
+            </div>
+            <div class="form-group">
+                <label>Correo</label>
+                <input type="email" id="regEmail" placeholder="tu@correo.com" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" id="regPassword" placeholder="mínimo 6 caracteres" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label>Elige tu avatar</label>
+                <div class="avatar-grid" id="avatarGrid"></div>
+                <label class="avatar-upload-label">
+                    📷 Subir foto
+                    <input type="file" id="inputAvatarUpload" accept="image/*" style="display:none">
+                </label>
+                <img id="avatarPreview" alt="preview">
+                <input type="hidden" id="avatarSeleccionado">
+                <input type="hidden" id="avatarTipo">
+            </div>
+            <button type="submit" class="btn-primary">Crear cuenta</button>
+        </form>
+
+        <div class="auth-error" id="authError"></div>
+    </div>
+</div>
+
+<!-- ===== OTP ===== -->
+<div class="screen" id="screenOtp">
+    <div class="otp-card">
+        <div class="otp-title">📧 Confirma tu correo</div>
+        <div class="otp-desc">Ingresa el código que enviamos a<br><strong id="otpEmailLabel"></strong></div>
+        <form id="formOtp">
+            <input type="text" id="otpInput" maxlength="6" placeholder="000000" inputmode="numeric">
+            <button type="submit" class="btn-primary">Verificar</button>
+        </form>
+        <button class="btn-secondary" id="btnReenviarOtp">Reenviar código</button>
+        <div class="auth-error" id="otpError"></div>
+    </div>
+</div>
+
+<!-- ===== LOBBY ===== -->
+<div class="screen" id="screenLobby">
+    <div class="top-bar">
+        <div class="header-usuario" id="headerUsuario"></div>
+        <div class="top-bar-btns">
+            <button class="btn-icon" id="btnRanking">🏆 Ranking</button>
+            <button class="btn-icon" id="btnSalir">Salir</button>
+        </div>
+    </div>
+    <div class="lobby-title">Salas</div>
+    <div class="lobby-sub">Elige una sala disponible para jugar</div>
+    <div class="salas-grid" id="salasGrid"></div>
+</div>
+
+<!-- ===== JUEGO ===== -->
+<div class="screen" id="screenJuego">
+    <div class="container">
+        <div class="game-header">
+            <button class="btn-volver" id="btnVolver">← Lobby</button>
+            <h1>TRES EN LÍNEA</h1>
+            <div class="sala-id-label" id="salaLabel">Sala 1</div>
+        </div>
+        <div class="marcador">
+            <div class="marcador-item">
+                <div class="marcador-label">X gana</div>
+                <div class="marcador-valor x" id="puntosX">0</div>
+            </div>
+            <div class="marcador-sep">|</div>
+            <div class="marcador-item">
+                <div class="marcador-label">Empates</div>
+                <div class="marcador-valor empate" id="puntosEmpate">0</div>
+            </div>
+            <div class="marcador-sep">|</div>
+            <div class="marcador-item">
+                <div class="marcador-label">O gana</div>
+                <div class="marcador-valor o" id="puntosO">0</div>
+            </div>
+        </div>
+        <div class="estado" id="estado">Conectando...</div>
+        <div class="reinicio-auto" id="reinicioAuto"></div>
+        <div class="tablero" id="tablero"></div>
+        <button id="reiniciar">Reiniciar partida</button>
+        <div class="footer">Tiempo real con Supabase</div>
+        <div class="logs-area" id="logsPanel"><div class="log-entry">Iniciando...</div></div>
+    </div>
+</div>
+
+<!-- ===== RANKING ===== -->
+<div class="screen" id="screenRanking">
+    <div class="top-bar">
+        <button class="btn-icon" id="btnVolverLobby">← Lobby</button>
+        <div class="ranking-title">🏆 Ranking Global</div>
+        <div style="width:70px"></div>
+    </div>
+    <div class="ranking-card">
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Jugador</th>
+                    <th>✅ V</th>
+                    <th>🤝 E</th>
+                    <th>❌ D</th>
+                </tr>
+            </thead>
+            <tbody id="rankingTabla"></tbody>
+        </table>
+    </div>
 </div>
 
 <script type="module">
-    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { initAuth, initAuthUI, cerrarSesion, actualizarHeaderUsuario } from './js/auth.js';
+    import { mostrarPantalla } from './js/router.js';
+    import { cargarLobby } from './js/lobby.js';
+    import { initGame } from './js/game.js';
+    import { cargarRanking } from './js/ranking.js';
 
-    // ===== CONFIGURACION =====
-    const supabaseUrl = 'https://vkylxedxgcxrxfezmaau.supabase.co';
-    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZreWx4ZWR4Z2N4cnhmZXptYWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Mjg1NTcsImV4cCI6MjA5MjEwNDU1N30.QLAB88lwIAwc0IZ2bOwF8cw3QBkcidW9zac7LCvaMiw';
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const GAME_ID = 1;
-    const SESSION_KEY = "tres_en_linea_session_id";
-    const miSessionId = localStorage.getItem(SESSION_KEY) || (Math.random().toString(36).slice(2) + Date.now().toString(36));
-    localStorage.setItem(SESSION_KEY, miSessionId);
+    // Inicializar UI de auth
+    initAuthUI();
+    initGame();
 
-    // Estado del juego
-    let miSimbolo = null;
-    let turnoActual = 'X';
-    let juegoTerminado = false;
-    let tableroLocal = ["", "", "", "", "", "", "", "", ""];
-    
-    // Elementos DOM
-    const tableroDiv = document.getElementById("tablero");
-    const estadoSpan = document.getElementById("estado");
-    const botonReiniciar = document.getElementById("reiniciar");
-    const logsPanel = document.getElementById("logsPanel");
+    // Botones globales
+    document.getElementById('btnSalir').addEventListener('click', cerrarSesion);
+    document.getElementById('btnRanking').addEventListener('click', cargarRanking);
+    document.getElementById('btnVolverLobby').addEventListener('click', () => {
+        mostrarPantalla('screenLobby');
+        cargarLobby();
+    });
 
-    // Logs en pantalla
-    function addLog(mensaje, tipo = "info") {
-        const logDiv = document.createElement("div");
-        logDiv.classList.add("log-entry");
-        if (tipo === "error") logDiv.classList.add("log-error");
-        if (tipo === "success") logDiv.classList.add("log-success");
-        logDiv.textContent = `[${new Date().toLocaleTimeString()}] ${mensaje}`;
-        logsPanel.appendChild(logDiv);
-        logsPanel.scrollTop = logsPanel.scrollHeight;
-        console.log(mensaje);
+    // Verificar sesión activa al cargar
+    const sesionActiva = await initAuth();
+    if (sesionActiva) {
+        mostrarPantalla('screenLobby');
+        cargarLobby();
+        actualizarHeaderUsuario();
     }
-
-    // Crear tablero visual
-    function crearTableroVisual() {
-        tableroDiv.innerHTML = "";
-        for (let i = 0; i < 9; i++) {
-            const celda = document.createElement("div");
-            celda.classList.add("celda");
-            celda.dataset.index = i;
-            celda.textContent = "";
-            celda.addEventListener("click", () => hacerMovimiento(i));
-            tableroDiv.appendChild(celda);        }
-        addLog("Tablero visual creado", "success");
-    }
-
-    // Actualizar vista del tablero
-    function actualizarVista() {
-        const celdas = document.querySelectorAll(".celda");
-        if (celdas.length !== 9) return;
-        for (let i = 0; i < 9; i++) {
-            celdas[i].textContent = tableroLocal[i];
-            celdas[i].classList.remove('x', 'o');
-            if (tableroLocal[i] === 'X') celdas[i].classList.add('x');
-            if (tableroLocal[i] === 'O') celdas[i].classList.add('o');
-        }
-    }
-
-    // Verificar ganador
-    function verificarGanador(board) {
-        const lineas = [
-            [0,1,2], [3,4,5], [6,7,8],
-            [0,3,6], [1,4,7], [2,5,8],
-            [0,4,8], [2,4,6]
-        ];
-        for (let linea of lineas) {
-            const [a,b,c] = linea;
-            if (board[a] && board[a] === board[b] && board[a] === board[c]) return board[a];
-        }
-        if (board.every(cell => cell !== "")) return "empate";
-        return null;
-    }
-
-    // Actualizar estado en pantalla
-    function actualizarEstado(ganador = null) {
-        if (ganador === 'empate') {
-            estadoSpan.textContent = "Empate. Reinicia.";
-        } else if (ganador) {
-            estadoSpan.textContent = `Gano ${ganador}`;
-        } else if (miSimbolo === null) {
-            estadoSpan.textContent = "Espectador";
-        } else if (miSimbolo === turnoActual) {
-            estadoSpan.textContent = "Tu turno";
-        } else {
-            estadoSpan.textContent = `Turno de ${turnoActual}`;
-        }
-    }
-
-    // FUNCION CORREGIDA: Asignacion atomica de simbolos
-    async function asignarSimbolo() {
-        addLog("Asignando simbolo...", "info");
-        let asignado = false;
-        let intentos = 0;
-        const maxIntentos = 3;
-        
-        while (!asignado && intentos < maxIntentos) {
-            intentos++;
-            
-            // Intentar obtener X primero (solo si x_player_id es NULL)
-            const { data: updateX, error: errorX } = await supabase
-                .from('juegos')
-                .update({ x_player_id: miSessionId })
-                .eq('id', GAME_ID)
-                .is('x_player_id', null)
-                .select('id');
-                
-            if (!errorX && Array.isArray(updateX) && updateX.length > 0) {
-                // Logre asignarme como X
-                miSimbolo = 'X';
-                asignado = true;
-                addLog(`Eres X (intento ${intentos})`, "success");
-                continue;
-            }
-            
-            // Si no pude obtener X, intentar obtener O (solo si o_player_id es NULL)
-            const { data: updateO, error: errorO } = await supabase
-                .from('juegos')
-                .update({ o_player_id: miSessionId })
-                .eq('id', GAME_ID)
-                .is('o_player_id', null)
-                .select('id');
-                
-            if (!errorO && Array.isArray(updateO) && updateO.length > 0) {
-                // Logre asignarme como O
-                miSimbolo = 'O';
-                asignado = true;
-                addLog(`Eres O (intento ${intentos})`, "success");
-                continue;
-            }
-            
-            // Si llegamos aqui, ambos estan ocupados
-            if (!errorX && !errorO) {
-                miSimbolo = null;
-                asignado = true;
-                addLog(`Partida llena. Modo espectador.`, "info");
-            } else {
-                // Error de red, esperar y reintentar
-                addLog(`Reintentando... (${intentos}/${maxIntentos})`, "info");
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-        }
-                if (!asignado) {
-            addLog(`No se pudo unir a la partida`, "error");
-            miSimbolo = null;
-        }
-        
-        actualizarEstado();
-    }
-
-    // Verificar jugadores conectados
-    function iniciarVerificacionJugadores() {
-        setInterval(async () => {
-            const { data: game } = await supabase
-                .from('juegos')
-                .select('x_player_id, o_player_id')
-                .eq('id', GAME_ID)
-                .single();
-                
-            if (game) {
-                const jugadorX = game.x_player_id ? "SI" : "NO";
-                const jugadorO = game.o_player_id ? "SI" : "NO";
-                addLog(`Jugadores: X ${jugadorX} | O ${jugadorO}`, "info");
-            }
-        }, 5000);
-    }
-
-    // Enviar movimiento a Supabase
-    async function hacerMovimiento(indice) {
-        if (juegoTerminado) {
-            addLog("Partida terminada. Reinicia.", "error");
-            return;
-        }
-        if (miSimbolo !== turnoActual) {
-            addLog(`No es tu turno`, "error");
-            return;
-        }
-        if (tableroLocal[indice] !== "") {
-            addLog("Casilla ocupada", "error");
-            return;
-        }
-
-        // Actualizar localmente primero
-        tableroLocal[indice] = miSimbolo;
-        actualizarVista();
-        
-        const ganador = verificarGanador(tableroLocal);
-        let siguienteTurno = (turnoActual === 'X') ? 'O' : 'X';
-        let activo = true;
-        
-        if (ganador) {
-            siguienteTurno = null;            activo = false;
-            juegoTerminado = true;
-            addLog(`${ganador} ha ganado!`, "success");
-        } else {
-            turnoActual = siguienteTurno;
-        }
-        
-        actualizarEstado(ganador);
-
-        addLog(`Enviando ${miSimbolo} en casilla ${indice}`, "info");
-        
-        const { error } = await supabase
-            .from('juegos')
-            .update({
-                board: tableroLocal,
-                current_turn: siguienteTurno,
-                winner: ganador,
-                is_active: activo
-            })
-            .eq('id', GAME_ID);
-
-        if (error) {
-            addLog(`Error: ${error.message}`, "error");
-            estadoSpan.textContent = "Error de red";
-        } else {
-            addLog(`Movimiento guardado`, "success");
-        }
-    }
-
-    // Reiniciar partida
-    async function reiniciarPartida() {
-        addLog("Reiniciando...", "info");
-        tableroLocal = ["", "", "", "", "", "", "", "", ""];
-        turnoActual = 'X';
-        juegoTerminado = false;
-        actualizarVista();
-        
-        const { error } = await supabase
-            .from('juegos')
-            .update({
-                board: tableroLocal,
-                current_turn: 'X',
-                winner: null,
-                is_active: true,
-                x_player_id: null,
-                o_player_id: null
-            })
-            .eq('id', GAME_ID);
-            
-        if (error) {            addLog(`Error reinicio: ${error.message}`, "error");
-        } else {
-            addLog(`Reinicio enviado`, "success");
-            await asignarSimbolo();
-        }
-    }
-
-    // Inicializar sincronizacion en tiempo real
-    async function iniciarSincronizacion() {
-        addLog("Inicializando...", "info");
-        
-        // Asegurar partida existente
-        const { error: upsertError } = await supabase
-            .from('juegos')
-            .upsert({
-                id: GAME_ID,
-                board: ["","","","","","","","",""],
-                current_turn: 'X',
-                winner: null,
-                is_active: true,
-                x_player_id: null,
-                o_player_id: null
-            }, { onConflict: 'id' });
-            
-        if (upsertError) {
-            addLog(`Upsert: ${upsertError.message}`, "error");
-        }
-        
-        await asignarSimbolo();
-        iniciarVerificacionJugadores();
-        
-        // Cargar estado actual
-        const { data: currentGame, error: loadError } = await supabase
-            .from('juegos')
-            .select('*')
-            .eq('id', GAME_ID)
-            .single();
-            
-        if (!loadError && currentGame) {
-            tableroLocal = currentGame.board || ["","","","","","","","",""];
-            turnoActual = currentGame.current_turn || 'X';
-            juegoTerminado = !currentGame.is_active;
-            actualizarVista();
-            actualizarEstado(currentGame.winner);
-            addLog(`Estado cargado. Turno: ${turnoActual}`, "success");
-        }
-        
-        // Suscribirse a cambios en tiempo real
-        const channel = supabase
-            .channel('juego-channel')            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'juegos',
-                filter: `id=eq.${GAME_ID}`
-            }, (payload) => {
-                addLog(`Cambio recibido`, "success");
-                const newState = payload.new;
-                
-                tableroLocal = newState.board;
-                turnoActual = newState.current_turn;
-                juegoTerminado = !newState.is_active;
-                
-                actualizarVista();
-                actualizarEstado(newState.winner);
-            })
-            .subscribe((status) => {
-                addLog(`Realtime: ${status}`, status === 'SUBSCRIBED' ? "success" : "info");
-            });
-    }
-
-    // Arrancar el juego
-    crearTableroVisual();
-    iniciarSincronizacion().catch(err => addLog(`Error: ${err.message}`, "error"));
-    botonReiniciar.addEventListener("click", reiniciarPartida);
 </script>
 </body>
 </html>
-
