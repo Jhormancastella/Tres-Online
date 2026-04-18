@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Tres en Línea Multijugador (Supabase)</title>
+    <title>Tres en Línea - Multijugador 1v1</title>
     <style>
         * {
             box-sizing: border-box;
@@ -121,13 +121,12 @@
 </head>
 <body>
 <div class="container">
-    <h1>⚡ TRES EN LÍNEA</h1>
+    <h1>⚡ TRES EN LÍNEA 1vs1</h1>
     <div class="estado" id="estado">🔄 Conectando...</div>
     <div class="tablero" id="tablero"></div>
     <button id="reiniciar">🔄 Reiniciar partida</button>
-    <div class="footer">🎮 Tiempo real con Supabase</div>
+    <div class="footer">🎮 Solo dos jugadores - Tiempo real con Supabase</div>
     
-    <!-- Área de logs visible para depuración en móvil -->
     <div class="logs-area" id="logsPanel">
         <div class="log-entry">📡 Iniciando juego...</div>
     </div>
@@ -136,26 +135,26 @@
 <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    // ========= TUS CREDENCIALES (modo pruebas) =========
+    // Credenciales (modo pruebas)
     const supabaseUrl = 'https://vkylxedxgcxrxfezmaau.supabase.co';
     const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZreWx4ZWR4Z2N4cnhmZXptYWF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1Mjg1NTcsImV4cCI6MjA5MjEwNDU1N30.QLAB88lwIAwc0IZ2bOwF8cw3QBkcidW9zac7LCvaMiw';
     
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const GAME_ID = 1;  // partida fija
+    const GAME_ID = 1;
 
-    // --- Estado del juego ---
-    let miSimbolo = null;       // 'X' o 'O'
+    // Estado
+    let miSimbolo = null;
     let turnoActual = 'X';
     let juegoTerminado = false;
     let tableroLocal = ["", "", "", "", "", "", "", "", ""];
     
-    // --- Elementos DOM ---
+    // DOM
     const tableroDiv = document.getElementById("tablero");
     const estadoSpan = document.getElementById("estado");
     const botonReiniciar = document.getElementById("reiniciar");
     const logsPanel = document.getElementById("logsPanel");
 
-    // --- Función para añadir logs visibles ---
+    // Logs
     function addLog(mensaje, tipo = "info") {
         const logDiv = document.createElement("div");
         logDiv.classList.add("log-entry");
@@ -165,18 +164,17 @@
         logDiv.textContent = `[${timestamp}] ${mensaje}`;
         logsPanel.appendChild(logDiv);
         logsPanel.scrollTop = logsPanel.scrollHeight;
-        // También a consola real (por si acaso)
-        if (tipo === "error") console.error(mensaje);
-        else console.log(mensaje);
+        console.log(mensaje);
     }
 
-    // --- Crear tablero visual ---
+    // Crear tablero visual
     function crearTableroVisual() {
         tableroDiv.innerHTML = "";
         for (let i = 0; i < 9; i++) {
             const celda = document.createElement("div");
             celda.classList.add("celda");
             celda.dataset.index = i;
+            celda.textContent = ""; // inicial vacío
             celda.addEventListener("click", () => hacerMovimiento(i));
             tableroDiv.appendChild(celda);
         }
@@ -185,12 +183,17 @@
 
     function actualizarVista() {
         const celdas = document.querySelectorAll(".celda");
+        if (celdas.length !== 9) {
+            addLog("⚠️ Error: no se encontraron las celdas", "error");
+            return;
+        }
         for (let i = 0; i < 9; i++) {
             celdas[i].textContent = tableroLocal[i];
         }
+        addLog(`🖌️ Vista actualizada: ${tableroLocal.join('')}`, "info");
     }
 
-    // --- Verificar ganador ---
+    // Verificar ganador
     function verificarGanador(board) {
         const lineas = [
             [0,1,2], [3,4,5], [6,7,8],
@@ -207,21 +210,18 @@
         return null;
     }
 
-    // --- Enviar movimiento a Supabase ---
+    // Enviar movimiento
     async function hacerMovimiento(indice) {
         if (juegoTerminado) {
             addLog("⛔ Partida terminada. Reinicia.", "error");
-            estadoSpan.textContent = "⛔ Partida terminada";
             return;
         }
         if (miSimbolo !== turnoActual) {
-            addLog(`🙅 No es tu turno (tú eres ${miSimbolo}, turno: ${turnoActual})`, "error");
-            estadoSpan.textContent = "No es tu turno";
+            addLog(`🙅 No es tu turno (tú: ${miSimbolo}, turno: ${turnoActual})`, "error");
             return;
         }
         if (tableroLocal[indice] !== "") {
             addLog("❌ Casilla ocupada", "error");
-            estadoSpan.textContent = "Casilla ocupada";
             return;
         }
 
@@ -233,10 +233,10 @@
         if (ganador) {
             siguienteTurno = null;
             activo = false;
-            addLog(`🎉 ¡${ganador} ha ganado!`, "success");
+            addLog(`🏆 ${ganador} ha ganado!`, "success");
         }
 
-        addLog(`📤 Enviando movimiento: ${miSimbolo} en casilla ${indice}`, "info");
+        addLog(`📤 Enviando ${miSimbolo} en casilla ${indice}`, "info");
         
         const { error } = await supabase
             .from('games')
@@ -252,14 +252,13 @@
             addLog(`❌ Error al guardar: ${error.message}`, "error");
             estadoSpan.textContent = "Error de red";
         } else {
-            addLog(`✅ Movimiento guardado en Supabase`, "success");
-            estadoSpan.textContent = "Movimiento enviado";
+            addLog(`✅ Movimiento guardado`, "success");
         }
     }
 
-    // --- Reiniciar partida ---
+    // Reiniciar partida
     async function reiniciarPartida() {
-        addLog("♻️ Solicitando reinicio...", "info");
+        addLog("♻️ Reiniciando...", "info");
         const tableroVacio = ["", "", "", "", "", "", "", "", ""];
         const { error } = await supabase
             .from('games')
@@ -268,23 +267,23 @@
                 current_turn: 'X',
                 winner: null,
                 is_active: true,
-                x_player_id: null,   // Limpiamos asignaciones para que nuevos jugadores tomen rol
+                x_player_id: null,
                 o_player_id: null
             })
             .eq('id', GAME_ID);
         if (error) {
             addLog(`Error al reiniciar: ${error.message}`, "error");
-            estadoSpan.textContent = "Error al reiniciar";
         } else {
-            addLog(`♻️ Reinicio enviado. Esperando cambios...`, "success");
-            estadoSpan.textContent = "Reiniciando...";
+            addLog(`♻️ Reinicio enviado`, "success");
         }
     }
 
-    // --- Asignar símbolo (X u O) usando las columnas x_player_id / o_player_id ---
+    // Asignar símbolo (X u O) con control de 2 jugadores máximo
     async function asignarSimbolo() {
-        addLog("🔍 Verificando asignación de símbolos...", "info");
-        const { data: gameData, error } = await supabase
+        addLog("🔍 Asignando símbolo...", "info");
+        
+        // Obtener estado actual de la partida (incluyendo x_player_id y o_player_id)
+        let { data: game, error } = await supabase
             .from('games')
             .select('x_player_id, o_player_id')
             .eq('id', GAME_ID)
@@ -296,9 +295,9 @@
         }
         
         const sessionId = Math.random().toString(36).substring(2, 10);
-        addLog(`🆔 ID de sesión temporal: ${sessionId}`, "info");
         
-        if (!gameData.x_player_id) {
+        if (!game.x_player_id) {
+            // Tomar X
             const { error: updateErr } = await supabase
                 .from('games')
                 .update({ x_player_id: sessionId })
@@ -307,11 +306,12 @@
                 addLog(`Error al tomar X: ${updateErr.message}`, "error");
             } else {
                 miSimbolo = 'X';
-                addLog(`🎮 Se te ha asignado el símbolo X`, "success");
+                addLog(`🎮 Eres X`, "success");
                 estadoSpan.textContent = "Eres X. Esperando oponente...";
             }
         } 
-        else if (!gameData.o_player_id) {
+        else if (!game.o_player_id) {
+            // Tomar O
             const { error: updateErr } = await supabase
                 .from('games')
                 .update({ o_player_id: sessionId })
@@ -320,26 +320,26 @@
                 addLog(`Error al tomar O: ${updateErr.message}`, "error");
             } else {
                 miSimbolo = 'O';
-                addLog(`🎮 Se te ha asignado el símbolo O`, "success");
-                estadoSpan.textContent = "Eres O. ¡La partida comenzará!";
+                addLog(`🎮 Eres O`, "success");
+                estadoSpan.textContent = "Eres O. ¡Juega!";
             }
         } 
         else {
             miSimbolo = null;
-            addLog(`👀 Partida llena (X y O ya ocupados). Eres espectador.`, "error");
-            estadoSpan.textContent = "Partida llena, solo espectador";
+            addLog(`👀 Partida llena. Eres espectador.`, "error");
+            estadoSpan.textContent = "Partida llena (2 jugadores)";
         }
     }
 
-    // --- Sincronización y Realtime ---
+    // Inicializar sincronización
     async function iniciarSincronizacion() {
-        addLog("🚀 Conectando con Supabase y configurando tiempo real...", "info");
+        addLog("🚀 Inicializando...", "info");
         
-        // Asegurar que exista la fila con id=1 (con todas las columnas necesarias)
+        // Asegurar que la partida existe (insertar si no)
         const { error: upsertError } = await supabase
             .from('games')
-            .upsert({ 
-                id: GAME_ID, 
+            .upsert({
+                id: GAME_ID,
                 board: ["","","","","","","","",""],
                 current_turn: 'X',
                 winner: null,
@@ -347,21 +347,23 @@
                 x_player_id: null,
                 o_player_id: null
             }, { onConflict: 'id' });
+        
         if (upsertError) {
-            addLog(`⚠️ Upsert inicial: ${upsertError.message}`, "error");
+            addLog(`⚠️ Upsert falló: ${upsertError.message}. Asegúrate de haber insertado la fila con SQL.`, "error");
         } else {
-            addLog(`📦 Registro de partida asegurado (ID ${GAME_ID})`, "success");
+            addLog(`📦 Partida asegurada (ID ${GAME_ID})`, "success");
         }
         
-        // Asignar símbolo al jugador actual
+        // Asignar símbolo
         await asignarSimbolo();
         
-        // Obtener estado actual de la partida
+        // Cargar estado actual
         const { data: currentGame, error: loadError } = await supabase
             .from('games')
             .select('*')
             .eq('id', GAME_ID)
             .single();
+        
         if (loadError) {
             addLog(`❌ Error al cargar partida: ${loadError.message}`, "error");
         } else if (currentGame) {
@@ -369,58 +371,48 @@
             turnoActual = currentGame.current_turn;
             juegoTerminado = !currentGame.is_active;
             actualizarVista();
-            addLog(`📥 Estado inicial cargado. Turno: ${turnoActual}, Activo: ${!juegoTerminado}`, "success");
-            if (currentGame.winner) addLog(`🏆 Ganador previo: ${currentGame.winner}`, "info");
+            addLog(`📥 Estado cargado. Turno: ${turnoActual}`, "success");
+            if (currentGame.winner) addLog(`Ganador: ${currentGame.winner}`, "info");
         }
         
-        // Escuchar cambios EN TIEMPO REAL
-        const channel = supabase
-            .channel('game-channel-logs')
-            .on(
-                'postgres_changes',
-                {
-                    event: 'UPDATE',
-                    schema: 'public',
-                    table: 'games',
-                    filter: `id=eq.${GAME_ID}`
-                },
-                (payload) => {
-                    addLog(`📡 Cambio detectado en tiempo real`, "success");
-                    const newState = payload.new;
-                    tableroLocal = newState.board;
-                    turnoActual = newState.current_turn;
-                    juegoTerminado = !newState.is_active;
-                    actualizarVista();
-                    
-                    if (newState.winner === 'empate') {
-                        addLog(`🤝 Empate!`, "info");
-                        estadoSpan.textContent = "🤝 ¡Empate! Reinicia.";
-                    } else if (newState.winner) {
-                        addLog(`🏆 Ganador: ${newState.winner}`, "success");
-                        estadoSpan.textContent = `🏆 Ganó ${newState.winner}`;
+        // Escuchar cambios en tiempo real
+        supabase
+            .channel('game-realtime')
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'games',
+                filter: `id=eq.${GAME_ID}`
+            }, (payload) => {
+                addLog(`📡 Cambio detectado`, "success");
+                const newState = payload.new;
+                tableroLocal = newState.board;
+                turnoActual = newState.current_turn;
+                juegoTerminado = !newState.is_active;
+                actualizarVista();
+                
+                if (newState.winner === 'empate') {
+                    estadoSpan.textContent = "🤝 ¡Empate!";
+                } else if (newState.winner) {
+                    estadoSpan.textContent = `🏆 Ganó ${newState.winner}`;
+                } else {
+                    if (miSimbolo === turnoActual && miSimbolo !== null) {
+                        estadoSpan.textContent = "🎯 Tu turno";
+                    } else if (miSimbolo !== null) {
+                        estadoSpan.textContent = `Turno de ${turnoActual}`;
                     } else {
-                        if (miSimbolo === turnoActual && miSimbolo !== null) {
-                            estadoSpan.textContent = "🎯 Tu turno";
-                            addLog(`👉 Tu turno (${miSimbolo})`, "info");
-                        } else if (miSimbolo !== null) {
-                            estadoSpan.textContent = `Turno de ${turnoActual}`;
-                            addLog(`👀 Turno de ${turnoActual}`, "info");
-                        } else {
-                            estadoSpan.textContent = "Espectador";
-                        }
+                        estadoSpan.textContent = "Espectador";
                     }
                 }
-            )
+            })
             .subscribe((status) => {
-                addLog(`🔌 Suscripción Realtime: ${status}`, status === 'SUBSCRIBED' ? "success" : "info");
+                addLog(`🔌 Realtime: ${status}`, status === 'SUBSCRIBED' ? "success" : "info");
             });
     }
 
-    // --- Inicialización ---
+    // Inicio
     crearTableroVisual();
-    iniciarSincronizacion().catch(err => {
-        addLog(`💥 Error fatal: ${err.message}`, "error");
-    });
+    iniciarSincronizacion().catch(err => addLog(`💥 Error fatal: ${err.message}`, "error"));
     botonReiniciar.addEventListener("click", reiniciarPartida);
 </script>
 </body>
