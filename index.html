@@ -8,6 +8,14 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+
+<!-- ===== INTRO VIDEO ===== -->
+<div id="introOverlay">
+    <video id="introVideo" src="https://res.cloudinary.com/dipv76dpn/video/upload/v1776640929/VID_20260415_084919_181_bsl_2_wawtkk.mp4"
+        autoplay muted playsinline webkit-playsinline>
+    </video>
+    <button id="introSkip">Saltar ▶</button>
+</div>
 <script type="module">
     import { montarUI }                                                    from './js/ui.js';
     import { initAuth, initAuthUI, cerrarSesion,
@@ -17,6 +25,20 @@
     import { initGame }                                                    from './js/game.js';
     import { cargarRanking }                                               from './js/ranking.js';
     import { initPerfil, abrirPerfil }                                     from './js/perfil.js';
+
+    function cerrarIntro() {
+        const overlay = document.getElementById('introOverlay');
+        overlay.classList.add('intro-saliendo');
+        setTimeout(() => overlay.remove(), 600);
+    }
+
+    const video = document.getElementById('introVideo');
+    const skip  = document.getElementById('introSkip');
+
+    video.addEventListener('ended', cerrarIntro);
+    skip.addEventListener('click', cerrarIntro);
+    // También cerrar si el video no carga
+    video.addEventListener('error', cerrarIntro);
 
     // 1. Montar todo el HTML de pantallas
     montarUI();
