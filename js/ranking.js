@@ -10,6 +10,8 @@ export async function cargarRanking() {
         .from('perfiles')
         .select('username, avatar_url, victorias, derrotas, empates, partidas')
         .order('victorias', { ascending: false })
+        .order('empates', { ascending: false })
+        .order('derrotas', { ascending: true })
         .limit(20);
 
     if (error || !data?.length) {

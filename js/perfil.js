@@ -2,6 +2,7 @@ import { supabase } from './supabase.js';
 import { mostrarPantalla } from './router.js';
 import { getPerfil, getUsuario, AVATARES, actualizarHeaderUsuario } from './auth.js';
 import { cargarLobby } from './lobby.js';
+import { AVATARES_ESPECIALES, estaDesbloqueado, proximoDesbloqueo } from './avatares.js';
 
 export function initPerfil() {
     document.getElementById('btnVolverPerfil').addEventListener('click', () => {
@@ -23,25 +24,138 @@ export function abrirPerfil() {
     document.getElementById('perfilAvatarUrl').value = p.avatar_url || '';
     document.getElementById('perfilMsg').textContent = '';
     document.getElementById('claveMsg').textContent = '';
+    document.getElementById('perfilUsernameDisplay').textContent = p.username || '';
 
-    // Render avatares predeterminados
+    renderStats(p);
+    renderAvataresPerfil(p);
+    mostrarPantalla('screenPerfil');
+}
+
+function renderStats(p) {
+    const v = p.victorias || 0;
+    const d = p.derrotas || 0;
+    const e = p.empates || 0;
+    const total = p.partidas || (v + d + e);
+    const winrate = total > 0 ? Math.round((v / total) * 100) : 0;
+
+    // Barra de progreso winrate
+    const barColor = winrate >= 60 ? '#4ade80' : winrate >= 40 ? '#facc15' : '#f87171';
+
+    document.getElementById('perfilStats').innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-item stat-v">
+                <div class="stat-valor">${v}</div>
+                <div class="stat-label">✅ Victorias</div>
+            </div>
+            <div class="stat-item stat-e">
+                <div class="stat-valor">${e}</div>
+                <div class="stat-label">🤝 Empates</div>
+            </div>
+            <div class="stat-item stat-d">
+                <div class="stat-valor">${d}</div>
+                <div class="stat-label">❌ Derrotas</div>
+            </div>
+            <div class="stat-item stat-t">
+                <div class="stat-valor">${total}</div>
+                <div class="stat-label">🎮 Partidas</div>
+            </div>
+        </div>
+        <div class="winrate-wrap">
+            <div class="winrate-label">
+                <span>Winrate</span>
+                <span style="color:${barColor}; font-weight:800">${winrate}%</span>
+            </div>
+            <div class="winrate-bar-bg">
+                <div class="winrate-bar-fill" style="width:${winrate}%; background:${barColor}"></div>
+            </div>
+        </div>
+    `;
+}
+
+function renderAvataresPerfil(p) {
+    const victorias = p.victorias || 0;
     const grid = document.getElementById('avatarGridPerfil');
     grid.innerHTML = '';
+
+    // Sección: avatares base
+    const tituloBase = document.createElement('div');
+    tituloBase.className = 'avatar-seccion-titulo';
+    tituloBase.textContent = 'Avatares base';
+    grid.appendChild(tituloBase);
+
+    const gridBase = document.createElement('div');
+    gridBase.className = 'avatar-grid';
     AVATARES.forEach(av => {
-        const div = document.createElement('div');
-        div.classList.add('avatar-opcion');
-        if (av.url === p.avatar_url) div.classList.add('selected');
-        div.innerHTML = `<img src="${av.url}" alt="${av.label}" title="${av.label}">`;
+        gridBase.appendChild(crearAvatarCard(av, p.avatar_url, true));
+    });
+    grid.appendChild(gridBase);
+
+    // Sección: avatares desbloqueables
+    const tituloEsp = document.createElement('div');
+    tituloEsp.className = 'avatar-seccion-titulo';
+    tituloEsp.textContent = '🏆 Avatares especiales';
+    grid.appendChild(tituloEsp);
+
+    const gridEsp = document.createElement('div');
+    gridEsp.className = 'avatar-grid';
+    AVATARES_ESPECIALES.forEach(av => {
+        const desbloqueado = estaDesbloqueado(av, victorias);
+        gridEsp.appendChild(crearAvatarCard(av, p.avatar_url, desbloqueado));
+    });
+    grid.appendChild(gridEsp);
+
+    // Próximo desbloqueo
+    const proximo = proximoDesbloqueo(victorias);
+    if (proximo) {
+        const falta = proximo.requiereVictorias - victorias;
+        const info = document.createElement('div');
+        info.className = 'proximo-desbloqueo';
+        info.innerHTML = `
+            <span class="proximo-icono">🔒</span>
+            Próximo: <strong>${proximo.label}</strong> — te faltan <strong>${falta}</strong> victoria${falta !== 1 ? 's' : ''}
+        `;
+        grid.appendChild(info);
+    } else {
+        const info = document.createElement('div');
+        info.className = 'proximo-desbloqueo proximo-completo';
+        info.textContent = '🎉 ¡Tienes todos los avatares desbloqueados!';
+        grid.appendChild(info);
+    }
+}
+
+function crearAvatarCard(av, avatarActual, desbloqueado) {
+    const div = document.createElement('div');
+    div.classList.add('avatar-opcion');
+    if (!desbloqueado) div.classList.add('bloqueado');
+    if (av.url === avatarActual) div.classList.add('selected');
+
+    const tooltip = desbloqueado ? av.label : `🔒 ${av.descripcion || av.label}`;
+
+    div.innerHTML = `
+        <img src="${av.url}" alt="${av.label}" title="${tooltip}">
+        ${!desbloqueado ? `<div class="avatar-lock">🔒</div>` : ''}
+        ${av.requiereVictorias && desbloqueado ? `<div class="avatar-badge-desbloqueado">✓</div>` : ''}
+    `;
+
+    if (desbloqueado) {
+        div.setAttribute('tabindex', '0');
+        div.setAttribute('role', 'radio');
+        div.setAttribute('aria-label', av.label);
         div.addEventListener('click', () => {
             document.querySelectorAll('#avatarGridPerfil .avatar-opcion').forEach(d => d.classList.remove('selected'));
             div.classList.add('selected');
             document.getElementById('perfilAvatarUrl').value = av.url;
             document.getElementById('perfilAvatarActual').src = av.url;
         });
-        grid.appendChild(div);
-    });
+        div.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') div.click();
+        });
+    } else {
+        div.setAttribute('aria-disabled', 'true');
+        div.setAttribute('title', `Desbloquea con ${av.requiereVictorias} victorias`);
+    }
 
-    mostrarPantalla('screenPerfil');
+    return div;
 }
 
 async function handleUploadAvatarPerfil(e) {
@@ -69,7 +183,6 @@ async function handleUploadAvatarPerfil(e) {
     }
 
     const { data: urlData } = supabase.storage.from('avatares').getPublicUrl(data.path);
-    // Forzar cache bust
     const publicUrl = urlData.publicUrl + '?t=' + Date.now();
     document.getElementById('perfilAvatarUrl').value = publicUrl;
     document.getElementById('perfilAvatarActual').src = publicUrl;
@@ -94,7 +207,6 @@ async function handleGuardarPerfil(e) {
 
     if (error) { msgEl.textContent = 'Error: ' + error.message; return; }
 
-    // Actualizar perfil local
     perfil.username = username;
     perfil.avatar_url = avatarUrl;
     actualizarHeaderUsuario();
