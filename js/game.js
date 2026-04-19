@@ -164,7 +164,7 @@ async function asignarSimbolo() {
     // Intentar tomar X (update atómico con condición)
     const { data: rx } = await supabase
         .from('juegos')
-        .update({ x_player_id: miSessionId })
+        .update({ x_player_id: miSessionId, x_player_history: miSessionId })
         .eq('id', salaActual)
         .is('x_player_id', null)
         .select('id');
@@ -173,7 +173,7 @@ async function asignarSimbolo() {
     // Intentar tomar O (update atómico con condición)
     const { data: ro } = await supabase
         .from('juegos')
-        .update({ o_player_id: miSessionId })
+        .update({ o_player_id: miSessionId, o_player_history: miSessionId })
         .eq('id', salaActual)
         .is('o_player_id', null)
         .select('id');

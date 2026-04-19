@@ -1,30 +1,22 @@
 /**
- * Módulo de estadísticas.
- * Recalcula victorias/derrotas/empates de un jugador
- * sumando los scores reales de todas las salas donde participó.
+ * stats.js
+ * Recalcula victorias/derrotas/empates sumando los scores
+ * de TODAS las salas donde el jugador ha participado alguna vez.
  *
- * Estructura de cada fila en 'juegos':
- *   x_player_id: uuid del jugador X
- *   o_player_id: uuid del jugador O
- *   scores: { x: N, o: N, empate: N }
+ * Usa x_player_history / o_player_history (IDs permanentes que nunca
+ * se borran al salir) como fuente de verdad.
+ * Fallback a x_player_id / o_player_id para salas antiguas sin history.
  */
 
 import { supabase } from './supabase.js';
 
-/**
- * Recalcula y guarda las stats del jugador en su perfil.
- * Llama esto al entrar al lobby para mantener el perfil sincronizado.
- * @param {string} uid - ID del jugador
- * @returns {object} - { victorias, derrotas, empates, partidas }
- */
 export async function recalcularStatsDesdeJuegos(uid) {
-    // Traer todas las salas donde el jugador participó
+    // Buscar salas por history (permanente) O por id actual (compatibilidad)
     const { data: salas, error } = await supabase
         .from('juegos')
-        .select('x_player_id, o_player_id, scores')
-        .or(`x_player_id.eq.${uid},o_player_id.eq.${uid}`);
+        .select('x_player_id, o_player_id, x_player_history, o_player_history, scores');
 
-    if (error || !salas?.length) return null;
+    if (error) return null;
 
     let victorias = 0;
     let derrotas  = 0;
@@ -32,23 +24,26 @@ export async function recalcularStatsDesdeJuegos(uid) {
 
     for (const sala of salas) {
         const s = sala.scores || {};
-        const esX = sala.x_player_id === uid;
-        const esO = sala.o_player_id === uid;
 
-        if (esX) {
-            victorias += s.x     || 0;
-            derrotas  += s.o     || 0;
+        // Determinar si el jugador fue X u O en esta sala
+        // Priorizar history (permanente), fallback a id actual
+        const fueX = sala.x_player_history === uid || sala.x_player_id === uid;
+        const fueO = sala.o_player_history === uid || sala.o_player_id === uid;
+
+        // Evitar contar si por algún bug aparece en ambos lados
+        if (fueX && !fueO) {
+            victorias += s.x      || 0;
+            derrotas  += s.o      || 0;
             empates   += s.empate || 0;
-        } else if (esO) {
-            victorias += s.o     || 0;
-            derrotas  += s.x     || 0;
+        } else if (fueO && !fueX) {
+            victorias += s.o      || 0;
+            derrotas  += s.x      || 0;
             empates   += s.empate || 0;
         }
     }
 
     const partidas = victorias + derrotas + empates;
 
-    // Guardar en el perfil
     await supabase
         .from('perfiles')
         .update({ victorias, derrotas, empates, partidas })

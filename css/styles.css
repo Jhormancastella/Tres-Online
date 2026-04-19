@@ -16,18 +16,62 @@ body {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ===== AUTH ===== */
+.auth-hero {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 28px 0 0; gap: 16px;
+}
+.auth-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 50%; }
+.auth-title { color: #facc15; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 0; }
+.auth-sub { text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 0; }
+
+/* Tablero animado */
+.auth-tablero-preview {
+    display: grid; grid-template-columns: repeat(3, 44px); gap: 6px;
+    background: rgba(45,58,74,0.6); padding: 10px; border-radius: 1rem;
+}
+.atp-cell {
+    width: 44px; height: 44px; background: #0f172a; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 800; transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.atp-cell.x { color: #f87171; }
+.atp-cell.o { color: #60a5fa; }
+
+/* Top 3 */
+.auth-top3 { width: 100%; }
+.auth-top3-titulo { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 8px; text-align: center; }
+.auth-top3-lista { display: flex; flex-direction: column; gap: 6px; }
+.auth-top3-item {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 7px 12px;
+}
+.auth-top3-medal { font-size: 1rem; width: 20px; }
+.auth-top3-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(250,204,21,0.3); }
+.auth-top3-name { flex: 1; color: #e2e8f0; font-size: 0.85rem; font-weight: 600; }
+.auth-top3-v { color: #4ade80; font-size: 0.8rem; font-weight: 700; }
+.auth-top3-loading { color: #475569; font-size: 0.8rem; text-align: center; padding: 8px; }
+
+/* Stats globales */
+.auth-stats-globales {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px; padding: 10px 16px; width: 100%;
+}
+.auth-stat-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.auth-stat-val { color: #facc15; font-size: 1.1rem; font-weight: 800; }
+.auth-stat-lbl { color: #475569; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.auth-stat-sep { color: #334155; font-size: 1.2rem; }
+
 .auth-card {
     background: rgba(255,255,255,0.07);
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 1.5rem;
-    padding: 2rem 1.5rem 1.5rem;
-    margin-top: 24px;
+    padding: 1.5rem;
+    margin-top: 16px;
     backdrop-filter: blur(12px);
 }
-.auth-logo-wrap { display: flex; justify-content: center; margin-bottom: 12px; }
-.auth-logo { width: 72px; height: 72px; object-fit: contain; border-radius: 50%; }
-.auth-title { color: #facc15; text-align: center; font-size: 1.6rem; font-weight: 800; letter-spacing: 2px; margin-bottom: 4px; }
-.auth-sub { text-align: center; color: #94a3b8; font-size: 0.8rem; margin-bottom: 20px; }
 
 .tabs { display: flex; gap: 8px; margin-bottom: 20px; }
 .tab-btn {
@@ -237,6 +281,28 @@ body {
 .sala-score-val.se { color: #facc15; }
 .sala-score-val.sd { color: #f87171; }
 .sala-score-lbl { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.5px; color: #334155; }
+
+/* ---- Info extra sala ---- */
+.sala-info-extra {
+    margin-top: 8px; padding: 6px 10px; border-radius: 8px;
+    font-size: 0.68rem; display: flex; flex-direction: column; gap: 3px; align-items: center;
+}
+.sala-info-nueva { color: #334155; font-style: italic; }
+.sala-info-personal { background: rgba(250,204,21,0.08); border: 1px solid rgba(250,204,21,0.2); }
+.sala-info-general  { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.sala-info-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: #475569; }
+.sala-info-stats { display: flex; gap: 8px; font-weight: 700; }
+.sala-info-stats .siv { color: #4ade80; }
+.sala-info-stats .sie { color: #facc15; }
+.sala-info-stats .sid { color: #f87171; }
+.sala-top { color: #94a3b8; font-size: 0.65rem; }
+
+/* ---- Sala donde el usuario está jugando ---- */
+.sala-card.sala-mia { border-color: rgba(250,204,21,0.35); }
+.sala-card.sala-mia .sala-numero { color: #fde047; }
+
+/* ---- Avatar en slot ---- */
+.sala-slot-avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 
 /* ===== JUEGO ===== */
 .container {

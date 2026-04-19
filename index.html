@@ -8,244 +8,44 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-
-<!-- ===== AUTH ===== -->
-<div class="screen active" id="screenAuth">
-    <div class="auth-card">
-        <div class="auth-logo-wrap">
-            <img src="https://res.cloudinary.com/dipv76dpn/image/upload/v1776561739/b_quiero_crear_un_logo-Photoroom_br2ybi.png" alt="Tres Online" class="auth-logo">
-        </div>
-        <div class="auth-title">TRES ONLINE</div>
-        <div class="auth-sub">Inicia sesión o regístrate para jugar</div>
-        <div class="tabs">
-            <button class="tab-btn tab-active" id="tabLogin">Iniciar sesión</button>
-            <button class="tab-btn" id="tabRegistro">Registrarse</button>
-        </div>
-
-        <!-- Login -->
-        <form id="formLogin">
-            <div class="form-group">
-                <label for="loginEmail">Correo</label>
-                <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="email" required>
-            </div>
-            <div class="form-group">
-                <label for="loginPassword">Contraseña</label>
-                <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
-            </div>
-            <button type="submit" class="btn-primary" id="btnLogin">Entrar</button>
-        </form>
-
-        <!-- Registro -->
-        <form id="formRegistro" style="display:none">
-            <div class="form-group">
-                <label for="regUsername">Nombre de usuario</label>
-                <input type="text" id="regUsername" placeholder="jugador123" autocomplete="username" required minlength="3">
-            </div>
-            <div class="form-group">
-                <label for="regEmail">Correo</label>
-                <input type="email" id="regEmail" placeholder="tu@correo.com" autocomplete="email" required>
-            </div>
-            <div class="form-group">
-                <label for="regPassword">Contraseña</label>
-                <input type="password" id="regPassword" placeholder="mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
-            </div>
-            <div class="form-group">
-                <label>Elige tu avatar</label>
-                <div class="avatar-grid" id="avatarGrid"></div>
-                <label class="avatar-upload-label">
-                    📷 Subir foto
-                    <input type="file" id="inputAvatarUpload" accept="image/*" style="display:none">
-                </label>
-                <img id="avatarPreview" alt="preview">
-                <input type="hidden" id="avatarSeleccionado">
-                <input type="hidden" id="avatarTipo">
-            </div>
-            <button type="submit" class="btn-primary" id="btnRegistro">Crear cuenta</button>
-        </form>
-
-        <div class="auth-error" id="authError" role="alert"></div>
-    </div>
-</div>
-
-<!-- ===== OTP ===== -->
-<div class="screen" id="screenOtp">
-    <div class="otp-card">
-        <div class="otp-title">📧 Confirma tu correo</div>
-        <div class="otp-desc">Ingresa el código que enviamos a<br><strong id="otpEmailLabel"></strong></div>
-        <form id="formOtp">
-            <input type="text" id="otpInput" maxlength="6" placeholder="000000" inputmode="numeric" autocomplete="one-time-code">
-            <button type="submit" class="btn-primary">Verificar</button>
-        </form>
-        <button class="btn-secondary" id="btnReenviarOtp">Reenviar código</button>
-        <div class="auth-error" id="otpError" role="alert"></div>
-    </div>
-</div>
-
-<!-- ===== LOBBY ===== -->
-<div class="screen" id="screenLobby">
-    <div class="top-bar">
-        <div class="header-usuario" id="headerUsuario" role="button" tabindex="0" aria-label="Ver perfil"></div>
-        <div class="lobby-brand">
-            <img src="https://res.cloudinary.com/dipv76dpn/image/upload/v1776561739/b_quiero_crear_un_logo-Photoroom_br2ybi.png" alt="Tres Online" class="lobby-logo">
-            <span class="lobby-brand-name">TRES ONLINE</span>
-        </div>
-        <div class="top-bar-btns">
-            <button class="btn-icon" id="btnRanking" aria-label="Ver ranking">🏆</button>
-            <button class="btn-icon btn-salir" id="btnSalir" aria-label="Cerrar sesión">Salir</button>
-        </div>
-    </div>
-    <div class="lobby-title">Salas</div>
-    <div class="lobby-sub">Elige una sala disponible para jugar</div>
-    <div class="salas-grid" id="salasGrid" role="list"></div>
-    <div style="text-align:center; margin-top: 12px;">
-        <button class="btn-reset-salas" id="btnResetSalas" title="Limpia jugadores desconectados de todas las salas">
-            🔄 Limpiar salas
-        </button>
-    </div>
-</div>
-
-<!-- ===== JUEGO ===== -->
-<div class="screen" id="screenJuego">
-    <div class="container">
-        <div class="game-header">
-            <button class="btn-volver" id="btnVolver" aria-label="Volver al lobby">← Lobby</button>
-            <div class="game-title-wrap">
-                <img src="https://res.cloudinary.com/dipv76dpn/image/upload/v1776561739/b_quiero_crear_un_logo-Photoroom_br2ybi.png" alt="Tres Online" class="game-logo">
-                <h1>TRES ONLINE</h1>
-            </div>
-            <div class="sala-id-label" id="salaLabel">Sala 1</div>
-        </div>
-        <div class="marcador" role="status" aria-live="polite">
-            <div class="marcador-item">
-                <div class="marcador-label">X gana</div>
-                <div class="marcador-valor x" id="puntosX">0</div>
-            </div>
-            <div class="marcador-sep" aria-hidden="true">|</div>
-            <div class="marcador-item">
-                <div class="marcador-label">Empates</div>
-                <div class="marcador-valor empate" id="puntosEmpate">0</div>
-            </div>
-            <div class="marcador-sep" aria-hidden="true">|</div>
-            <div class="marcador-item">
-                <div class="marcador-label">O gana</div>
-                <div class="marcador-valor o" id="puntosO">0</div>
-            </div>
-        </div>
-        <div class="estado" id="estado" role="status" aria-live="polite">Conectando...</div>
-        <div class="reinicio-auto" id="reinicioAuto" aria-live="polite"></div>
-        <div class="tablero" id="tablero" role="grid" aria-label="Tablero de juego"></div>
-        <button id="reiniciar" class="btn-reiniciar">Reiniciar partida</button>
-        <div class="logs-area" id="logsPanel" aria-label="Registro de eventos"><div class="log-entry">Iniciando...</div></div>
-    </div>
-</div>
-
-<!-- ===== PERFIL ===== -->
-<div class="screen" id="screenPerfil">
-    <div class="top-bar">
-        <button class="btn-icon" id="btnVolverPerfil" aria-label="Volver al lobby">← Lobby</button>
-        <div class="ranking-title">👤 Mi Perfil</div>
-        <div style="width:70px"></div>
-    </div>
-    <div class="perfil-card">
-        <div class="perfil-avatar-wrap">
-            <img id="perfilAvatarActual" src="" alt="Tu avatar" class="perfil-avatar-grande">
-            <div class="perfil-username-display" id="perfilUsernameDisplay"></div>
-            <label class="perfil-cambiar-foto">
-                📷 Cambiar foto
-                <input type="file" id="inputAvatarPerfil" accept="image/*" style="display:none">
-            </label>
-        </div>
-
-        <!-- Stats -->
-        <div class="perfil-stats" id="perfilStats"></div>
-        <div class="form-group" style="margin-top:12px">
-            <label>O elige un avatar</label>
-            <div class="avatar-grid" id="avatarGridPerfil"></div>
-        </div>
-        <input type="hidden" id="perfilAvatarUrl">
-        <form id="formPerfil">
-            <div class="form-group">
-                <label for="perfilUsername">Nombre de usuario</label>
-                <input type="text" id="perfilUsername" required minlength="3" autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="perfilEmail">Correo (no editable)</label>
-                <input type="email" id="perfilEmail" disabled style="opacity:0.5" autocomplete="email">
-            </div>
-            <button type="submit" class="btn-primary">Guardar cambios</button>
-        </form>
-        <div class="auth-error" id="perfilMsg" role="alert"></div>
-        <div class="perfil-seccion">
-            <div class="perfil-seccion-titulo">Cambiar contraseña</div>
-            <form id="formCambiarClave">
-                <div class="form-group">
-                    <label for="nuevaClave">Nueva contraseña</label>
-                    <input type="password" id="nuevaClave" placeholder="mínimo 6 caracteres" minlength="6" autocomplete="new-password" required>
-                </div>
-                <div class="form-group">
-                    <label for="confirmarClave">Confirmar contraseña</label>
-                    <input type="password" id="confirmarClave" placeholder="repite la contraseña" autocomplete="new-password" required>
-                </div>
-                <button type="submit" class="btn-primary">Actualizar contraseña</button>
-            </form>
-            <div class="auth-error" id="claveMsg" role="alert"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ===== RANKING ===== -->
-<div class="screen" id="screenRanking">
-    <div class="top-bar">
-        <button class="btn-icon" id="btnVolverLobby" aria-label="Volver al lobby">← Lobby</button>
-        <div class="ranking-title">🏆 Ranking Global</div>
-        <div style="width:70px"></div>
-    </div>
-    <div class="ranking-card">
-        <table class="ranking-table" aria-label="Tabla de ranking global">
-            <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Jugador</th>
-                    <th scope="col">✅ V</th>
-                    <th scope="col">🤝 E</th>
-                    <th scope="col">❌ D</th>
-                </tr>
-            </thead>
-            <tbody id="rankingTabla"></tbody>
-        </table>
-    </div>
-</div>
-
 <script type="module">
-    import { initAuth, initAuthUI, cerrarSesion, actualizarHeaderUsuario, setOnAvatarClick } from './js/auth.js';
-    import { mostrarPantalla } from './js/router.js';
-    import { cargarLobby, limpiarLobby, resetearTodasLasSalas } from './js/lobby.js?v=3';
-    import { initGame } from './js/game.js';
-    import { cargarRanking } from './js/ranking.js';
-    import { initPerfil, abrirPerfil } from './js/perfil.js';
+    import { montarUI }                                                    from './js/ui.js';
+    import { initAuth, initAuthUI, cerrarSesion,
+             actualizarHeaderUsuario, setOnAvatarClick }                   from './js/auth.js';
+    import { mostrarPantalla }                                             from './js/router.js';
+    import { cargarLobby, limpiarLobby, resetearTodasLasSalas }           from './js/lobby.js';
+    import { initGame }                                                    from './js/game.js';
+    import { cargarRanking }                                               from './js/ranking.js';
+    import { initPerfil, abrirPerfil }                                     from './js/perfil.js';
 
+    // 1. Montar todo el HTML de pantallas
+    montarUI();
+
+    // 2. Inicializar módulos
     initAuthUI();
     initGame();
     initPerfil();
-
     setOnAvatarClick(abrirPerfil);
 
+    // 3. Eventos globales
     document.getElementById('btnSalir').addEventListener('click', async () => {
         try {
             limpiarLobby();
             await cerrarSesion();
         } catch (e) {
             console.error('Error al salir:', e);
-            // Forzar pantalla auth aunque falle
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('screenAuth').classList.add('active');
         }
     });
+
     document.getElementById('btnRanking').addEventListener('click', cargarRanking);
+
     document.getElementById('btnVolverLobby').addEventListener('click', () => {
         mostrarPantalla('screenLobby');
         cargarLobby();
     });
+
     document.getElementById('btnResetSalas').addEventListener('click', async () => {
         const btn = document.getElementById('btnResetSalas');
         btn.disabled = true;
@@ -256,6 +56,7 @@
         btn.textContent = '🔄 Limpiar salas';
     });
 
+    // 4. Verificar sesión activa
     const sesionActiva = await initAuth();
     if (sesionActiva) {
         mostrarPantalla('screenLobby');
