@@ -171,6 +171,7 @@ function irAlLobby() {
 }
 
 let _onAvatarClick = null;
+// v2
 export function setOnAvatarClick(fn) { _onAvatarClick = fn; }
 
 export function actualizarHeaderUsuario() {
