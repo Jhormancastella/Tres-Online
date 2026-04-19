@@ -3,7 +3,7 @@
 Juego de Tres en Línea multijugador en tiempo real, construido con HTML, CSS, JavaScript vanilla y Supabase.
 
 <div align="center">
-  <img src="https://res.cloudinary.com/dipv76dpn/image/upload/v1776561739/b_quiero_crear_un_logo-Photoroom_br2ybi.png" alt="Tres Online Logo" width="100">
+  <img src="https://res.cloudinary.com/dipv76dpn/image/upload/v1776627650/a_agregemos_el_X_l_O_d_r0nubi.png" alt="Tres Online Logo" width="100">
 
   <br><br>
 

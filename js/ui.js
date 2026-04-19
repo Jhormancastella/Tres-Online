@@ -3,7 +3,7 @@
  * Modulariza el HTML que antes estaba en index.html.
  */
 
-const LOGO = 'https://res.cloudinary.com/dipv76dpn/image/upload/v1776561739/b_quiero_crear_un_logo-Photoroom_br2ybi.png';
+const LOGO = 'https://res.cloudinary.com/dipv76dpn/image/upload/v1776627650/a_agregemos_el_X_l_O_d_r0nubi.png';
 
 function screenAuth() {
     return `
@@ -154,6 +154,17 @@ function screenJuego() {
                 <div class="marcador-valor o" id="puntosO">0</div>
             </div>
         </div>
+
+        <!-- Temporizador de turno -->
+        <div class="turno-timer-wrap" id="turnoTimerWrap" style="display:none">
+            <svg class="turno-timer-svg" viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="turno-timer-bg" cx="18" cy="18" r="15.9"/>
+                <circle class="turno-timer-arc" id="turnoTimerArc" cx="18" cy="18" r="15.9"
+                    stroke-dasharray="100 100" stroke-dashoffset="0"/>
+            </svg>
+            <span class="turno-timer-num" id="turnoTimerNum">15</span>
+        </div>
+
         <div class="estado" id="estado" role="status" aria-live="polite">Conectando...</div>
         <div class="reinicio-auto" id="reinicioAuto" aria-live="polite"></div>
         <div class="tablero" id="tablero" role="grid" aria-label="Tablero de juego"></div>

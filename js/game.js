@@ -4,8 +4,11 @@ import { getPerfil } from './auth.js';
 import { cargarLobby } from './lobby.js';
 import { obtenerNuevosDesbloqueos } from './avatares.js';
 import { recalcularStatsDesdeJuegos } from './stats.js';
+import { elegirDificultad, moverIA } from './ia.js';
 
 const DELAY_REINICIO = 4;
+const ESPERA_IA_MS   = 3000;
+const TIEMPO_TURNO   = 15; // segundos por turno
 const EMPTY_BOARD = () => ['','','','','','','','',''];
 
 // Estado del juego
@@ -18,7 +21,17 @@ let tableroLocal = EMPTY_BOARD();
 let reinicioTimer = null;
 let canalJuego = null;
 let miSessionId = null;
-let statsGuardadasEnPartida = false; // evita doble conteo por partida
+let statsGuardadasEnPartida = false;
+
+// Estado IA
+let modoIA = false;
+let simboloIA = null;
+let nivelIA = null;
+let timerIA = null;
+
+// Temporizador de turno
+let turnoTimerInterval = null;
+let turnoTimerSegundos = 0;
 
 export function initGame() {
     miSessionId = getPerfil()?.id || localStorage.getItem('tres_session') || Math.random().toString(36).slice(2);
@@ -58,7 +71,6 @@ export function initGame() {
 }
 
 export async function entrarSala(id) {
-    // Asegurar que miSessionId usa el ID real del perfil (puede haber cambiado tras login)
     const perfilActual = getPerfil();
     if (perfilActual?.id) {
         miSessionId = perfilActual.id;
@@ -71,6 +83,7 @@ export async function entrarSala(id) {
     juegoTerminado = false;
     tableroLocal = EMPTY_BOARD();
     statsGuardadasEnPartida = false;
+    detenerIA();
 
     document.getElementById('salaLabel').textContent = `Sala ${id}`;
     document.getElementById('logsPanel').innerHTML = `<div class="log-entry">Conectando a sala ${id}...</div>`;
@@ -124,7 +137,8 @@ function actualizarEstado(ganador = null) {
     const span = document.getElementById('estado');
     if (!span) return;
     if (ganador === 'empate') span.textContent = '🤝 Empate';
-    else if (ganador) span.textContent = `🎉 Ganó ${ganador}`;
+    else if (ganador) span.textContent = modoIA && ganador === simboloIA ? '🤖 Ganó la IA' : `🎉 Ganó ${ganador}`;
+    else if (modoIA) span.textContent = turnoActual === miSimbolo ? `Tu turno (${miSimbolo}) — vs 🤖` : '🤖 IA pensando...';
     else if (!dosJugadores) span.textContent = miSimbolo ? `Eres ${miSimbolo} — Esperando rival...` : 'Espectador';
     else if (!miSimbolo) span.textContent = 'Modo espectador';
     else if (miSimbolo === turnoActual) span.textContent = `Tu turno (${miSimbolo})`;
@@ -154,6 +168,80 @@ function cancelarCuentaRegresiva() {
     if (reinicioTimer) { clearInterval(reinicioTimer); reinicioTimer = null; }
     const div = document.getElementById('reinicioAuto');
     if (div) div.textContent = '';
+}
+
+// ── Temporizador de turno ─────────────────────────────────────────────────────
+
+function iniciarTurnoTimer() {
+    detenerTurnoTimer();
+    if (juegoTerminado) return;
+
+    // Solo mostrar si hay partida activa (real o IA)
+    const activo = dosJugadores || modoIA;
+    if (!activo) return;
+
+    turnoTimerSegundos = TIEMPO_TURNO;
+    _renderTimer(TIEMPO_TURNO);
+
+    const wrap = document.getElementById('turnoTimerWrap');
+    if (wrap) wrap.style.display = 'flex';
+
+    turnoTimerInterval = setInterval(() => {
+        turnoTimerSegundos--;
+        _renderTimer(turnoTimerSegundos);
+
+        if (turnoTimerSegundos <= 0) {
+            detenerTurnoTimer();
+            _tiempoAgotado();
+        }
+    }, 1000);
+}
+
+function detenerTurnoTimer() {
+    if (turnoTimerInterval) { clearInterval(turnoTimerInterval); turnoTimerInterval = null; }
+    const wrap = document.getElementById('turnoTimerWrap');
+    if (wrap) wrap.style.display = 'none';
+}
+
+function _renderTimer(segundos) {
+    const num = document.getElementById('turnoTimerNum');
+    const arc = document.getElementById('turnoTimerArc');
+    if (!num || !arc) return;
+
+    num.textContent = segundos;
+    const pct = (segundos / TIEMPO_TURNO) * 100;
+    arc.setAttribute('stroke-dasharray', `${pct} 100`);
+
+    // Color: verde → amarillo → rojo
+    const color = segundos > 8 ? '#4ade80' : segundos > 4 ? '#facc15' : '#f87171';
+    arc.style.stroke = color;
+    num.style.color = color;
+}
+
+function _tiempoAgotado() {
+    if (juegoTerminado) return;
+
+    if (modoIA) {
+        // En modo IA: si es turno del jugador, la IA juega por él
+        if (turnoActual === miSimbolo) {
+            addLog('⏱ Tiempo agotado — la IA juega por ti', 'error');
+            turnoDeIA();
+        } else {
+            turnoDeIA();
+        }
+        return;
+    }
+
+    // Partida real: si es mi turno y se acaba el tiempo, juego en celda aleatoria
+    if (turnoActual === miSimbolo && dosJugadores) {
+        const vacias = tableroLocal.map((v, i) => v === '' ? i : -1).filter(i => i !== -1);
+        if (vacias.length) {
+            const idx = vacias[Math.floor(Math.random() * vacias.length)];
+            addLog('⏱ Tiempo agotado — movimiento automático', 'error');
+            hacerMovimiento(idx);
+        }
+    }
+    // Si es turno del rival, el servidor lo manejará cuando él se quede sin tiempo
 }
 
 async function asignarSimbolo() {
@@ -225,7 +313,8 @@ async function asignarSimbolo() {
 }
 
 async function hacerMovimiento(indice) {
-    if (!dosJugadores) { addLog('Esperando rival...', 'error'); return; }
+    // En modo IA no necesita dosJugadores real
+    if (!modoIA && !dosJugadores) { addLog('Esperando rival...', 'error'); return; }
     if (juegoTerminado) return;
     if (!miSimbolo) return;
     if (miSimbolo !== turnoActual) { addLog('No es tu turno', 'error'); return; }
@@ -246,6 +335,20 @@ async function hacerMovimiento(indice) {
     }
     actualizarEstado(ganador);
 
+    if (modoIA) {
+        // Partida contra IA — no toca la BD ni el ranking
+        if (ganador) {
+            const div = document.getElementById('reinicioAuto');
+            if (div) div.textContent = 'Práctica — no suma al ranking';
+            setTimeout(() => reiniciarPartidaIA(), 2500);
+        } else {
+            // Turno de la IA
+            setTimeout(() => turnoDeIA(), 600);
+        }
+        return;
+    }
+
+    // Partida real — actualizar BD
     let scoreUpdate = {};
     if (ganador) {
         const { data: gd } = await supabase.from('juegos').select('scores').eq('id', salaActual).single();
@@ -265,11 +368,12 @@ async function hacerMovimiento(indice) {
         ...scoreUpdate
     }).eq('id', salaActual);
 
-    // Cada jugador actualiza sus propias stats al terminar
-    // El que hizo el movimiento lo hace aquí directamente
     if (ganador) {
         await actualizarRankingPerfil(ganador);
         iniciarCuentaRegresiva(miSimbolo === 'X');
+        detenerTurnoTimer();
+    } else {
+        iniciarTurnoTimer(); // nuevo turno
     }
 }
 
@@ -310,7 +414,7 @@ async function actualizarRankingPerfil(ganador) {
 
 async function reiniciarPartida(esAuto = false) {
     cancelarCuentaRegresiva();
-    statsGuardadasEnPartida = false; // nueva partida, nuevo conteo
+    statsGuardadasEnPartida = false;
     addLog(esAuto ? 'Auto-reinicio...' : 'Reiniciando...', 'info');
     await supabase.from('juegos').update({
         board: EMPTY_BOARD(),
@@ -324,6 +428,73 @@ async function reiniciarPartida(esAuto = false) {
     juegoTerminado = false;
     actualizarVista();
     actualizarEstado();
+}
+
+// ── IA ────────────────────────────────────────────────────────────────────────
+
+function activarIA() {
+    if (modoIA || dosJugadores || !miSimbolo) return;
+    simboloIA = miSimbolo === 'X' ? 'O' : 'X';
+    nivelIA = elegirDificultad();
+    modoIA = true;
+    tableroLocal = EMPTY_BOARD();
+    turnoActual = 'X';
+    juegoTerminado = false;
+    actualizarVista();
+    actualizarEstado();
+    addLog(`🤖 IA activada — nivel: ${nivelIA} (práctica, no suma al ranking)`, 'info');
+    iniciarTurnoTimer();
+    if (simboloIA === 'X') setTimeout(() => turnoDeIA(), 800);
+}
+
+function detenerIA() {
+    modoIA = false;
+    simboloIA = null;
+    nivelIA = null;
+    if (timerIA) { clearTimeout(timerIA); timerIA = null; }
+    detenerTurnoTimer();
+    const div = document.getElementById('reinicioAuto');
+    if (div) div.textContent = '';
+}
+
+function turnoDeIA() {
+    if (!modoIA || juegoTerminado) return;
+    if (turnoActual !== simboloIA) return;
+
+    const indice = moverIA([...tableroLocal], simboloIA, nivelIA);
+    if (indice === -1) return;
+
+    tableroLocal[indice] = simboloIA;
+    actualizarVista();
+
+    const resultado = verificarGanador(tableroLocal);
+    const ganador = resultado?.ganador || null;
+
+    if (ganador) {
+        juegoTerminado = true;
+        detenerTurnoTimer();
+        actualizarVista(resultado.celdas);
+        actualizarEstado(ganador);
+        const div = document.getElementById('reinicioAuto');
+        if (div) div.textContent = 'Práctica — no suma al ranking';
+        setTimeout(() => reiniciarPartidaIA(), 2500);
+    } else {
+        turnoActual = miSimbolo;
+        actualizarEstado();
+        iniciarTurnoTimer(); // turno del jugador
+    }
+}
+
+function reiniciarPartidaIA() {
+    if (!modoIA) return;
+    tableroLocal = EMPTY_BOARD();
+    turnoActual = 'X';
+    juegoTerminado = false;
+    actualizarVista();
+    actualizarEstado();
+    const div = document.getElementById('reinicioAuto');
+    if (div) div.textContent = '';
+    iniciarTurnoTimer();    if (simboloIA === 'X') setTimeout(() => turnoDeIA(), 800);
 }
 
 async function iniciarJuego() {
@@ -340,6 +511,12 @@ async function iniciarJuego() {
         actualizarMarcador(g.scores);
         addLog(`Sala ${salaActual} lista`, 'success');
         if (juegoTerminado) iniciarCuentaRegresiva(miSimbolo === 'X');
+        if (!juegoTerminado && dosJugadores) iniciarTurnoTimer();
+    }
+
+    // Si hay símbolo asignado pero no hay rival, arrancar IA tras espera
+    if (miSimbolo && !dosJugadores) {
+        timerIA = setTimeout(() => activarIA(), ESPERA_IA_MS);
     }
 
     if (canalJuego) { await supabase.removeChannel(canalJuego); canalJuego = null; }
@@ -352,10 +529,28 @@ async function iniciarJuego() {
         }, async (payload) => {
             const ns = payload.new;
             const eraTerminado = juegoTerminado;
+            const eraModoIA = modoIA;
             tableroLocal = ns.board;
             turnoActual = ns.current_turn;
             juegoTerminado = !ns.is_active;
-            dosJugadores = !!(ns.x_player_id && ns.o_player_id);
+            const nuevosDosJugadores = !!(ns.x_player_id && ns.o_player_id);
+
+            // Llegó un rival real — desactivar IA y cancelar timer
+            if (!dosJugadores && nuevosDosJugadores && modoIA) {
+                detenerIA();
+                tableroLocal = EMPTY_BOARD();
+                turnoActual = 'X';
+                juegoTerminado = false;
+                addLog('¡Rival conectado! Empezando partida real 🎮', 'success');
+            }
+
+            dosJugadores = nuevosDosJugadores;
+
+            // Si llegó rival antes de que arranque la IA, cancelar timer
+            if (dosJugadores && timerIA) {
+                clearTimeout(timerIA);
+                timerIA = null;
+            }
 
             let celdasG = [];
             if (ns.winner && ns.winner !== 'empate') {
@@ -367,20 +562,23 @@ async function iniciarJuego() {
             actualizarEstado(ns.winner);
             actualizarMarcador(ns.scores);
 
-            // Cuando la partida termina, cada jugador guarda sus propias stats.
-            // El flag statsGuardadasEnPartida evita doble conteo si ambos
-            // llaman a esta función (quien hizo el movimiento ya la llamó antes).
-            if (!eraTerminado && juegoTerminado && ns.winner && miSimbolo) {
+            if (!eraTerminado && juegoTerminado && ns.winner && miSimbolo && !eraModoIA) {
                 await actualizarRankingPerfil(ns.winner);
                 iniciarCuentaRegresiva(miSimbolo === 'X');
             }
             if (eraTerminado && !juegoTerminado) cancelarCuentaRegresiva();
+
+            // Reiniciar timer de turno cuando cambia el estado
+            if (!juegoTerminado && dosJugadores) iniciarTurnoTimer();
+            if (juegoTerminado) detenerTurnoTimer();
         })
         .subscribe(s => addLog(`Realtime: ${s}`, s === 'SUBSCRIBED' ? 'success' : 'info'));
 }
 
 async function salirSala() {
     cancelarCuentaRegresiva();
+    detenerIA();
+    if (timerIA) { clearTimeout(timerIA); timerIA = null; }
     if (canalJuego) { await supabase.removeChannel(canalJuego); canalJuego = null; }
 
     if (miSimbolo === 'X') {
